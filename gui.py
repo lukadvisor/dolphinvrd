@@ -41,12 +41,11 @@ def main2():
     dp_args = dp.parse()
     DEVICE = cpu_or_gpu(dp_args.device)
 
-    '''
-    torch.manual_seed(1234)
-    torch.cuda.manual_seed(1234)
-    np.random.seed(1234)
-    torch.backends.cudnn.deterministic = True
-    '''
+    
+    #torch.manual_seed(1234)
+    #torch.cuda.manual_seed(1234)
+    #np.random.seed(1234)
+    #torch.backends.cudnn.deterministic = True
 
 
     print("+Initializing object detector+")
@@ -98,7 +97,7 @@ def main2():
 
     gif_images = []
     for i, pic in enumerate(visualise):
-        gif_images.append(pic)
+        gif_images.append(pic[:, :, ::-1])
     imageio.mimsave('demo.gif', gif_images)
 
 
@@ -177,22 +176,22 @@ else:
 
 #### Run main script
 
-    
-print("+Sorting out the video+")
-cap= cv2.VideoCapture('./temDir/target.mp4')
-i=0
-while(cap.isOpened()):
-    ret, frame = cap.read()
-    if ret == False:
-        break
-    cv2.imwrite(f'./temDir/{str(i).zfill(6)}.jpg', frame)
-    i+=1
-cap.release()
-os.system('rm ./temDir/target.mp4')
+if uploaded_file is not None:  
+    print("+Sorting out the video+")
+    cap= cv2.VideoCapture('./temDir/target.mp4')
+    i=0
+    while(cap.isOpened()):
+        ret, frame = cap.read()
+        if ret == False:
+            break
+        cv2.imwrite(f'./temDir/{str(i).zfill(6)}.jpg', frame)
+        i+=1
+    cap.release()
+    os.system('rm ./temDir/target.mp4')
 
 
-print('!!!!RUNNING MAIN2!!!!')
-main2()
+    print('!!!!RUNNING MAIN2!!!!')
+    main2()
 
 
 
