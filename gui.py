@@ -8,7 +8,9 @@ from base64 import decodebytes
 from io import BytesIO
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
+import cv2
 ##########
 ##### Set up sidebar.
 ##########
@@ -38,8 +40,7 @@ st.write('# Dolphin Detection')
 
 
 st.write('#### Select image or video to upload.')
-uploaded_file = st.file_uploader('',
-                                         type=['png', 'jpg', 'jpeg', 'mp4', 'avi'])
+uploaded_file = st.file_uploader('', type=['png', 'jpg', 'jpeg', 'mp4', 'avi'])
 
 
 ## Pull in default image or user-selected image.
@@ -53,7 +54,14 @@ if uploaded_file is None:
 
 else:
     # User-selected image.
-    image = Image.open(uploaded_file)
+	with open(os.path.join("temDir", uploaded_file.name), "wb") as f: 
+	      f.write(uploaded_file.getbuffer())  
+
+
+
+####
+####
+
 
 ## Subtitle.
 st.write('### Inferenced Image/Video')
@@ -95,22 +103,6 @@ if uploaded_file:
         f'<img src="data:image/gif;base64,{data_url}" alt="alt gif">',
         unsafe_allow_html=True
     )
-
-    ## Construct the URL to retrieve JSON.
-    upload_url = ''.join([
-        'https://infer.roboflow.com/rf-bccd-bkpj9--1',
-        '?access_token=vbIBKNgIXqAQ'
-    ])
-
-    ## POST to the API.
-    r = requests.post(upload_url,
-                      data=img_str,
-                      headers={
-        'Content-Type': 'application/x-www-form-urlencoded'
-    })
-
-    ## Save the JSON.
-    output_dict = r.json()
 
     ## Generate list of confidences.
     #onfidences = [box['confidence'] for box in output_dict['predictions']]
