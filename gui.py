@@ -11,9 +11,125 @@ import matplotlib.pyplot as plt
 import os
 
 import cv2
+import imageio
+
+import numpy as np
+import torch, torchvision
+
+from model.helper.parser import DolphinParser
+from model.helper.dolphin_detector_train import get_transform
+from model.helper.utility import git_root, cpu_or_gpu, plot_traj
+from dataset.dolphin import DOLPHIN, DOLPHINVIDEOVRD, TESTER
+
+import os, yaml
+from tqdm import tqdm
+
+from model.tracker.tracktor.network import FRCNN_FPN
+from model.tracker.tracktor.tracktor import Tracker
+
+from model.motiondetect.s3d_resnet import s3d_resnet
+
+
 ##########
 ##### Set up sidebar.
 ##########
+
+
+def main2():
+
+    dp = DolphinParser()
+    dp_args = dp.parse()
+    DEVICE = cpu_or_gpu(dp_args.device)
+
+    '''
+    torch.manual_seed(1234)
+    torch.cuda.manual_seed(1234)
+    np.random.seed(1234)
+    torch.backends.cudnn.deterministic = True
+    '''
+
+
+    print("+Initializing object detector+")
+
+    try:
+        obj_detect = FRCNN_FPN(num_classes=3)
+        model_weight = os.path.join(git_root(), 'model', 'param', 'general_detector_30.pth') #'model', 'param', 'general_detector_0.pth')
+        # .pth file needed
+
+        checkpoint = torch.load(model_weight, map_location=DEVICE)
+        obj_detect.load_state_dict(checkpoint['model_state_dict'])
+
+    except (FileNotFoundError, Exception):
+        print('Failed Loading Default Object Detector, Use torchvision instead')
+        obj_detect = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
+
+    obj_detect.to(DEVICE)
+    obj_detect.eval()
+
+    print("+Initializing Tracker")
+    tracker = None
+    with open(os.path.join(git_root(), 'model', 'tracker', 'tracktor', 'configuration.yaml'), 'r') as stream:
+        try:
+            configyaml = yaml.safe_load(stream)['tracktor']['tracker']
+            tracker = Tracker(obj_detect, None, configyaml, DEVICE)
+        except yaml.YAMLError as exc:
+            print(exc)
+
+
+    dataset = TESTER(data_path='./temDir/',
+                      set='Test',
+                      mode='general',
+                      transforms=get_transform(train=False))
+
+    dataloader = torch.utils.data.DataLoader(dataset, batch_size=1, shuffle=False)
+
+
+    tracker.reset()
+    for i, (clip, blob) in enumerate(dataloader):
+        with torch.no_grad():
+            tracker.step(blob, idx=i+1)
+        
+    traj = tracker.get_results()
+
+    print(traj)
+    visualise = plot_traj_2(clip, traj, dataloader, None)
+
+
+
+    gif_images = []
+    for i, pic in enumerate(visualise):
+        gif_images.append(pic)
+    imageio.mimsave('demo.gif', gif_images)
+
+
+
+def plot_traj_2(clip, traj, dler, motion=None):
+    
+
+    clip_np  = [ cv2.imread(c['img_path'][0]) for _, c in dler]
+
+    print(traj)
+    for id, cood in traj.items():
+        
+        
+        for f, cord in cood.items():
+        
+            bbox = cord[0:4]
+            x_min, y_min, x_max, y_max = [ int(b.item()) for b in bbox]
+            
+            this_img = clip_np[f]
+            this_img = cv2.rectangle(this_img, (x_min, y_min), (x_max, y_max), (255, 255, 0), 2)
+
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            centre_x = int(x_min/2 + x_max/2)
+            centre_y = int(y_min/2 + y_max/2)
+            this_img = cv2.putText(this_img, f'ID: {id}', (centre_x, centre_y), font, 0.7, (255, 255, 0), 2, cv2.LINE_AA)
+            
+
+            clip_np[f] = this_img
+
+    return clip_np
+
 
 # Add in location to select image.
 
@@ -58,8 +174,26 @@ else:
 	      f.write(uploaded_file.getbuffer())  
 
 	
-####
-####
+
+#### Run main script
+
+    
+print("+Sorting out the video+")
+cap= cv2.VideoCapture('./temDir/target.mp4')
+i=0
+while(cap.isOpened()):
+    ret, frame = cap.read()
+    if ret == False:
+        break
+    cv2.imwrite(f'./temDir/{str(i).zfill(6)}.jpg', frame)
+    i+=1
+cap.release()
+os.system('rm ./temDir/target.mp4')
+
+
+print('!!!!RUNNING MAIN2!!!!')
+main2()
+
 
 
 ## Subtitle.
@@ -84,7 +218,7 @@ buffered = io.BytesIO()
 
 
 
-file_ = open("example/000000.gif", "rb")
+file_ = open("./demo.gif", "rb")
 contents = file_.read()
 data_url = base64.b64encode(contents).decode("utf-8")
 file_.close()

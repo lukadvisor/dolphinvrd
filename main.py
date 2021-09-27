@@ -14,6 +14,7 @@ from model.tracker.tracktor.tracktor import Tracker
 
 from model.motiondetect.s3d_resnet import s3d_resnet
 
+import imageio
 import cv2 
 def inference():
     pass
@@ -226,8 +227,11 @@ def main2():
     visualise = plot_traj_2(clip, traj, dataloader, None)
 
 
+
+    gif_images = []
     for i, pic in enumerate(visualise):
-        cv2.imwrite(str(i).zfill(6)+'.jpg', pic)
+        gif_images.append(pic)
+    imageio.mimsave('demo.gif', gif_images)
 
 
 
