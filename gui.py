@@ -54,11 +54,10 @@ if uploaded_file is None:
 
 else:
     # User-selected image.
-	with open(os.path.join("temDir", uploaded_file.name), "wb") as f: 
+	with open(os.path.join("temDir", 'target.mp4'), "wb") as f: 
 	      f.write(uploaded_file.getbuffer())  
 
-
-
+	
 ####
 ####
 
@@ -73,12 +72,9 @@ buffered = io.BytesIO()
 # Base 64 encode.
 img_str = base64.b64encode(buffered.getvalue())
 img_str = img_str.decode('ascii')
-
 ## Construct the URL to retrieve image.
 
-
 #image = Image.open(BytesIO(r.content))
-
 # Convert to JPEG Buffer.
 buffered = io.BytesIO()
 #image.save(buffered, quality=90, format='JPEG')
@@ -86,10 +82,14 @@ buffered = io.BytesIO()
 # Display image.
 #st.image(image, use_column_width=True)
 
+
+
 file_ = open("example/000000.gif", "rb")
 contents = file_.read()
 data_url = base64.b64encode(contents).decode("utf-8")
 file_.close()
+
+
 
 
 motionfile_ = open("example/motionplot.gif", "rb")

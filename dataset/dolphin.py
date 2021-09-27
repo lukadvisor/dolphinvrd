@@ -14,6 +14,55 @@ import cv2
 
 from PIL import Image
 
+class TESTER(torch.utils.data.Dataset):
+
+    def __init__(self, data_path, set, mode='general', vis_threshold=0.2, segment_size=15, image_crop_scaling=1.25, transforms=None):
+
+        # load all image files, sorting them to
+        # ensure that they are aligned
+        self._img_paths = []
+
+        self._img_paths = sorted(glob.glob(os.path.join(data_path, '*.jpg')))
+  
+        self._classes = ('background', 'dolphin', 'pipe')
+
+        self._vis_threshold = vis_threshold
+        self.transforms = transforms
+
+        self.window_size = segment_size 
+        self.image_crop_scaling = image_crop_scaling
+
+        self.single_dolphin_image_resize = 600
+        self.resize = torchvision.transforms.Resize((self.single_dolphin_image_resize, self.single_dolphin_image_resize))
+
+
+    def __getitem__(self, idx):
+        return self.src_one_idx(idx)
+
+
+    def src_one_idx(self, idx):
+
+        img_path = self._img_paths[idx]
+        img = Image.open(img_path).convert("RGB")
+
+
+        target = {}
+        target['img_path'] = img_path
+        target["boxes"] = [torch.zeros(4)]
+        
+        if self.transforms is not None:
+            img, target = self.transforms(img, target)
+
+        target["img"] = img
+
+
+        return img, target
+
+    def __len__(self):
+        return len(self._img_paths)
+
+
+
 class DOLPHIN(torch.utils.data.Dataset):
 
     def __init__(self, data_path, set, mode='general', vis_threshold=0.2, segment_size=15, image_crop_scaling=1.25, transforms=None):
