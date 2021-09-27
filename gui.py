@@ -39,7 +39,7 @@ def main2():
 
     dp = DolphinParser()
     dp_args = dp.parse()
-    DEVICE = cpu_or_gpu(dp_args.device)
+    DEVICE = cpu_or_gpu('cuda')
 
     
     #torch.manual_seed(1234)
@@ -192,7 +192,7 @@ if uploaded_file is not None:
 
     print('!!!!RUNNING MAIN2!!!!')
     main2()
-
+    os.system('rm ./temDir/*.jpg')
 
 
 ## Subtitle.
