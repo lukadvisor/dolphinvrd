@@ -79,13 +79,19 @@ buffered = io.BytesIO()
 # Display image.
 #st.image(image, use_column_width=True)
 
-file_ = open("example/000000.gif", "rb")
-contents = file_.read()
-data_url = base64.b64encode(contents).decode("utf-8")
-file_.close()
+
+#file_ = open("example/000000.gif", "rb")
+#contents = file_.read()
+#data_url = base64.b64encode(contents).decode("utf-8")
+#file_.close()
 
 
 if uploaded_file:
+
+    buffered = BytesIO()
+    image.save(buffered, format="JPEG")
+    data_url = base64.b64encode(buffered.getvalue()).decode("utf-8")
+
     st.markdown(
         f'<img src="data:image/gif;base64,{data_url}" alt="alt gif">',
         unsafe_allow_html=True
